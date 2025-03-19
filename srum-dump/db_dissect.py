@@ -38,8 +38,11 @@ class DissectESERecordWrapper(Entry):
             if col_type == JET_coltyp.Binary:
                 col_data = "" if not col_data else codecs.encode(col_data,"HEX")
             elif col_type == JET_coltyp.DateTime:
-                col_data = oatimestamp(col_data)
-                col_data = col_data.replace(tzinfo=None)
+                if not col_data:
+                    col_data = ""
+                else:
+                    col_data = oatimestamp(col_data)
+                    col_data = col_data.replace(tzinfo=None)
             elif col_type in [JET_coltyp.Text, JET_coltyp.LongText, JET_coltyp.LongBinary]:
                 col_data = blob_to_string(col_data)
   

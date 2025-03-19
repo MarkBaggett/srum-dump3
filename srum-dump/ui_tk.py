@@ -18,6 +18,7 @@ class ProgressWindow:
         self.root.title(title)
         self.root.geometry("600x400")
         self.root.attributes('-topmost', True)
+        self.root.after(2000, self.remove_topmost, self.root)
         
         # Current table label
         self.table_label = tk.Label(self.root, text="Preparing to dump tables ...", font=('Arial', 10))
@@ -26,6 +27,8 @@ class ProgressWindow:
         # Progress bar frame
         progress_frame = tk.Frame(self.root)
         progress_frame.pack(fill=tk.X, padx=20, pady=5)
+
+
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
             progress_frame, 
@@ -40,13 +43,13 @@ class ProgressWindow:
         
         # Records dumped
         self.records_var = tk.StringVar(value="Records Dumped: 0")
-        records_label = tk.Label(stats_frame, textvariable=self.records_var)
-        records_label.pack(side=tk.LEFT, padx=10)
+        self.records_label = tk.Label(stats_frame, textvariable=self.records_var)
+        self.records_label.pack(side=tk.LEFT, padx=10)
         
         # Records per second
         self.rps_var = tk.StringVar(value="Records/sec: 0")
-        rps_label = tk.Label(stats_frame, textvariable=self.rps_var)
-        rps_label.pack(side=tk.RIGHT, padx=10)
+        self.rps_label = tk.Label(stats_frame, textvariable=self.rps_var)
+        self.rps_label.pack(side=tk.RIGHT, padx=10)
         
         # Log text area
         log_frame = tk.Frame(self.root)
@@ -84,10 +87,13 @@ class ProgressWindow:
         self.progress_var.set(0)
         self.update()
 
+    def remove_topmost(self, window):
+        window.attributes('-topmost', False)
+
     def set_current_table(self, table_name):
         """Update the current table being processed"""
         self.current_table += 1
-        self.table_label.config(text=f"Now dumping table: {table_name}")
+        self.table_label.config(text=f"Current Task: {table_name}")
         self.progress_var.set((self.current_table / self.total_tables) * 100)
         self.update()
 
@@ -107,6 +113,11 @@ class ProgressWindow:
         """Force window update"""
         self.root.update_idletasks()
         self.root.update()
+
+    def hide_record_stats(self):
+        """Hide the records stats labels"""
+        self.records_label.pack_forget()
+        self.rps_label.pack_forget()
 
     def finished(self):
         """Enable the close button when processing is complete"""
@@ -128,14 +139,14 @@ def browse_file(initial_dir, filetypes):
     root.withdraw()
     file_path = filedialog.askopenfilename(initialdir=initial_dir, filetypes=filetypes)
     root.destroy()
-    return file_path
+    return str(file_path)
 
 def browse_directory(initial_dir):
     root = tk.Tk()
     root.withdraw()
     directory_path = filedialog.askdirectory(initialdir=initial_dir)
     root.destroy()
-    return directory_path
+    return str(directory_path)
 
 def get_user_input(options):
     srum_path = options.SRUM_INFILE
@@ -151,6 +162,10 @@ def get_user_input(options):
 
     def on_support_click(event):
         webbrowser.open("https://twitter.com/MarkBaggett")
+        webbrowser.open("http://youtube.com/markbaggett")
+
+    def remove_topmost( window):
+        window.attributes('-topmost', False)
 
     def on_ok():
         srum_path = srum_path_entry.get()
@@ -176,12 +191,23 @@ def get_user_input(options):
     root.title("SRUM_DUMP 3.0")
     root.geometry("800x500")
     root.attributes('-topmost', True)
+    root.after(2000, remove_topmost , root)
+
+    # Get the correct path to the image
+    if getattr(sys, 'frozen', False):
+        # Running in a PyInstaller bundle
+        base_path = sys._MEIPASS
+    else:
+        # Running in a normal Python environment
+        base_path = os.path.abspath(".")
+
+    image_path = os.path.join(base_path, 'srum-dump.png')
 
     # Logo placeholder frame at the top
     logo_frame = tk.Frame(root, height=100, width=200)
     logo_frame.pack(pady=20)
     # Placeholder for logo - replace 'logo.png' with your image
-    logo_img = tk.PhotoImage(file='srum-dump.png')
+    logo_img = tk.PhotoImage(file=image_path)
     logo_label = tk.Label(logo_frame, image=logo_img)
     logo_label.image = logo_img  # Keep a reference
     logo_label.pack()
@@ -199,7 +225,7 @@ def get_user_input(options):
     srum_path_entry = tk.Entry(srum_input_frame, width=80)
     srum_path_entry.pack(side=tk.LEFT, pady=5)
     srum_path_entry.insert(0, srum_path)
-    tk.Button(srum_input_frame, text="Browse", command=lambda: browse_file(srum_path)).pack(side=tk.LEFT, padx=5)
+    tk.Button(srum_input_frame, text="Browse", command=lambda: browse_file(options.SRUM_INFILE, [('SRUDB.dat', 'srudb.dat'), ('All files', '*.*')])).pack(side=tk.LEFT, padx=5)
 
     # Configuration File section
     config_frame = tk.Frame(content_frame)
@@ -210,7 +236,7 @@ def get_user_input(options):
     config_file_entry = tk.Entry(config_input_frame, width=80)
     config_file_entry.pack(side=tk.LEFT, pady=5)
     config_file_entry.insert(0, config_file)
-    tk.Button(config_input_frame, text="Browse", command=lambda: browse_file(config_file)).pack(side=tk.LEFT, padx=5)
+    tk.Button(config_input_frame, text="Browse", command=lambda: browse_file(options.OUT_DIR, [('config file','*.json')])).pack(side=tk.LEFT, padx=5)
     tk.Button(config_input_frame, text="Edit", command=edit_config).pack(side=tk.LEFT, padx=5)
 
     # Output Directory section
@@ -255,6 +281,9 @@ def get_input_wizard(options):
         def on_next():
             window.quit()
 
+        def remove_topmost(window):
+            window.attributes('-topmost', False)
+
         def on_exit():
             path_entry.delete(0, tk.END)
             path_entry.insert(0,'EXIT')
@@ -264,6 +293,7 @@ def get_input_wizard(options):
         window.title(title)
         window.geometry("600x150+300+200")
         window.attributes('-topmost', True)
+        window.after(2000, remove_topmost, window)
 
         frame = tk.Frame(window)
         frame.pack(pady=20)
@@ -288,12 +318,12 @@ def get_input_wizard(options):
         return result
     
     # Step 1: Get Working directory
-    working_default = pathlib.Path().home() / "Documents/output"
+    working_default = pathlib.Path().home()
     while True:
         output_dir = create_step_window(
             "Step 1: Select Output/Working Directory",
             "Click browse and select or type a directory for output and confiuration files",
-            working_default, #default value
+            str(working_default), #default value
             working_default, #starting browse location
             'dir'  # 'dir' is a special value to indicate a directory selection
         )
@@ -319,13 +349,13 @@ def get_input_wizard(options):
         srum_path = create_step_window(
             "Step 2: Select SRUM Database",
             "Click Browse and select or type a valid path to SRUDB.dat:",
-            srum_default,
+            str(srum_default),
             srum_location,
             [('SRUDB.dat', 'srudb.dat'), ('All files', '*.*')]
         ) 
         if srum_path == 'EXIT':
             sys.exit(1)
-        elif pathlib.Path(srum_path).is_file():
+        elif os.path.exists(pathlib.Path(srum_path)):
             break
         else:
             messagebox.showerror("Error", "You must select a valid SRUM Datbase (srudb.dat).")
@@ -348,14 +378,14 @@ def get_input_wizard(options):
         software_path = create_step_window(
             "Step 3: OPTIONALLY select a SOFTWARE Hive",
             "Leave this blank OR select/enter the associated SOFTWARE hive:",
-            software_default,
+            str(software_default),
             software_location,
             [('SOFTWARE', 'SOFTWARE'), ('All files', '*.*')],
             "Finish"
         )
         if software_path == 'EXIT': 
             sys.exit(1)
-        if software_path != '' and not pathlib.Path(software_path).is_file():
+        if software_path != '' and not os.path.exists(pathlib.Path(software_path)):
             messagebox.showerror("Error", "You must select a valid SOFTWARE hive or leave the field empty.")
         else:
             break

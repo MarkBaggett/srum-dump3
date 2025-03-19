@@ -91,7 +91,24 @@ columns_to_translate = {
 }
 
 calculated_columns = {
-    '{FEE4E14F-02A9-4550-B5CE-5FA2DA202E37}': ('Percentage Charge','=I#ROW_NUM#/A1+A1G#ROW_NUM#')  #Add Percentage charge to Energy Usage with specified function
+    'Energy Usage': {'Percentage Charge':'=I#ROW_NUM#/G#ROW_NUM#'}  #Add Percentage charge to Energy Usage with specified function
+}
+
+columns_to_rename = {
+    "TimeStamp": "SRUM Entry Creation (UTC)",
+    "AppId" : "Application/Process",
+    "UserId" : "User Information",
+    'AutoIncId': 'Srum ID Number', 
+    'ForegroundCycleTime': 'CPU time in Forground', 
+    'BackgroundCycleTime': 'CPU time in background', 
+    'Flags': 'Flags (BinaryData)', 
+    'EventTimestamp': 'Event Time Stamp', 
+    'ChargeLevel': 'Battery Level', 
+    'InterfaceLuid': 'Interface', 
+    'L2ProfileId': 'Profile', 
+    'L2ProfileFlags': 'Profile Flags', 
+    'BytesSent': 'Bytes Sent', 
+    'BytesRecvd': 'Bytes Received'
 }
 
 interface_types = {
@@ -244,18 +261,22 @@ interface_types = {
 
 
 ads = itertools.cycle([
-    "Did you know SANS Automating Infosec with Python SEC573 teaches you to develop Forensics and Incident Response tools?\n",
     "To learn how SRUM and other artifacts can enhance your forensics investigations check out SANS Windows Forensic Analysis FOR500.\n",
-    "Yogesh Khatri's paper at https://github.com/ydkhatri/Presentations/blob/master/SRUM%20Forensics-SANS.DFIR.summit.2015.pdf was essential in the creation of this tool.\n",
-    "Yogesh Khatri also contributes code and other critical updates!  Thanks for the support Yogesh. \n",
+    "Yogesh Khatri made this tool possible. Its all based on his original research and he contributes to this project! Thanks for the support Yogesh. \n",
+    "Information from the SOFTWARE hive is added to your config file. There you can customize and extend it.\n",
     "Consider renaming wireless network names and user accounts in the configuration file so they stand out!\n"
+    "My class SANS SEC573 Automating Infosec with Python teaches you to develop Forensics and Incident Response tools!\n",
     "Add your Domain (investigation) specific User SIDS to known_sids in the configuration file!\n",
     "Set the dirty_words in the configuration file! NOTE: Dirty words significantly impact performance\n",
+    "Do you know how to code in Python?  Prove it with the GPYC Certification!\n",
     "Try 'srum_dump.exe -e pyesedb' to change the engine used to extract the data. Different engines retrieve a different number of records. (Don't shoot the messenger.)\n",
     "Want CSV files instead of XLSX?  Try 'srum_dump.exe -f csv' To create a folder full of CSV files.\n",
     "This program was written by Twitter:@markbaggett because @ovie said so. Thanks @donaldjwilliam5!\n"
 ])
 
+def column_friendly_names( original_name):
+    #Returns renamed column or original if it was not in the config
+    return columns_to_rename.get( original_name, original_name)
 
 def BinarySIDtoStringSID(sid_str, sid_lookups=None):
     #Original form Source: https://github.com/google/grr/blob/master/grr/parsers/wmi_parser.py
