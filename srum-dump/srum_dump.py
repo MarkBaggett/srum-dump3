@@ -214,7 +214,7 @@ for each_table in table_list:
             #Add calculated columns to the end
             if calculated_columns:        
                 for formula_template in calculated_columns.values():
-                    formula = formula_template.replace('#ROW_NUM#', str(table_count))  # Replace row number
+                    formula = formula_template.replace('#ROW_NUM#', str(table_count + 1))  # Replace row number
                     new_row.append(formula)  # Append the formula
 
             #add the new row to the table
