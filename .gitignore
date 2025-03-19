@@ -1,2 +1,5 @@
 .vscode/
 __pycache__/
+srum-dump/build/
+srum-dump/dist/
+*.spec
