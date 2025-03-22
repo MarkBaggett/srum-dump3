@@ -9,8 +9,12 @@ import urllib.request
 import pathlib
 import sys
 
+import helpers
+
 from tkinter import ttk
 from tkinter import filedialog, messagebox
+
+from config_manager import ConfigManager
 
 class ProgressWindow:
     def __init__(self, title="SRUM Dump Progress"):
@@ -137,16 +141,18 @@ def message_box(title, message):
 def browse_file(initial_dir, filetypes):
     root = tk.Tk()
     root.withdraw()
+    initial_dir = str(initial_dir).replace("/","\\")
     file_path = filedialog.askopenfilename(initialdir=initial_dir, filetypes=filetypes)
     root.destroy()
-    return str(file_path)
+    return file_path.replace("/", "\\")
 
 def browse_directory(initial_dir):
     root = tk.Tk()
     root.withdraw()
+    initial_dir = str(initial_dir).replace("/", "\\")
     directory_path = filedialog.askdirectory(initialdir=initial_dir)
     root.destroy()
-    return str(directory_path)
+    return directory_path.replace("/","\\")
 
 def get_user_input(options):
     srum_path = options.SRUM_INFILE
@@ -318,12 +324,12 @@ def get_input_wizard(options):
         return result
     
     # Step 1: Get Working directory
-    working_default = pathlib.Path().home()
+    working_default = pathlib.Path().home() 
     while True:
         output_dir = create_step_window(
             "Step 1: Select Output/Working Directory",
             "Click browse and select or type a directory for output and confiuration files",
-            str(working_default), #default value
+            working_default, #default value
             working_default, #starting browse location
             'dir'  # 'dir' is a special value to indicate a directory selection
         )
@@ -334,15 +340,24 @@ def get_input_wizard(options):
         else:
             messagebox.showerror("Error", "You must select a valid directory.")
 
+    #check to see if a config exists so we can use the previous directories.
+    config_path = pathlib.Path(output_dir).joinpath("srum_dump_config.json")
+    if config_path.is_file():
+        infile = ConfigManager(config_path).get_config("defaults").get("SRUM_INFILE")
+    else:
+        infile = None
 
     # Step 2: Get SRUM path
-    if pathlib.Path().cwd().joinpath('SRUDB.dat').exists():
+    if infile and pathlib.Path(infile):
+        srum_default = infile
+        srum_location = infile
+    elif pathlib.Path().cwd().joinpath('SRUDB.dat').exists():  #next current directory
         srum_default = pathlib.Path().cwd().joinpath('SRUDB.dat')
         srum_location = srum_default.parent
-    elif pathlib.Path(output_dir).joinpath('SRUDB.dat').exists():
+    elif pathlib.Path(output_dir).joinpath('SRUDB.dat').exists():  #maybe they are all in outfile
         srum_default = pathlib.Path(output_dir).joinpath('SRUDB.dat')
         srum_location = srum_default.parent
-    else:
+    else:                                                           #last default to live system
         srum_default = pathlib.Path("c:/windows/system32/sru/srudb.dat")
         srum_location = pathlib.Path(output_dir) 
     while True: 
@@ -389,36 +404,6 @@ def get_input_wizard(options):
             messagebox.showerror("Error", "You must select a valid SOFTWARE hive or leave the field empty.")
         else:
             break
-
-
-
-        # live_system = messagebox.askyesno(
-        #     "Live System Detected",
-        #     "This is a live system. Acquire live files and analyze?"
-        # )
-        # # 
-        # if live_system:
-        #     show_live_system_warning()
-        #     return None
-
-    # Step 3: Get template
-    # template_default = ''
-    # for file in os.listdir(cwd):
-    #     if file.startswith('SRUM_TEMPLATE') and file.endswith('.xlsx'):
-    #         template_default = os.path.join(cwd, file)
-    #         break
-    # template_path = create_step_window(
-    #     "Step 3: Select Template (Optional)",
-    #     "Path to SRUM_DUMP Template:",
-    #     template_default,
-    #     [('Excel files', '*.xlsx')]
-    # )
-    
-    # if not template_path:
-    #     no_template = messagebox.askyesno("No Template", "I don't have a template")
-    #     if no_template:
-    #         template_path = "NO TEMPLATE"
-
 
 
     # Update options dictionary
