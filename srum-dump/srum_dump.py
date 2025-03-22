@@ -97,6 +97,13 @@ if options.ESE_ENGINE == "pyesedb":
 else:
     from db_dissect import srum_database
 
+
+#Enable to debug when dissect in use
+# import debugpy
+# debugpy.listen(5678)
+# print("Waiting for debugger...")
+# debugpy.wait_for_client()
+
 #Select Output Engine and create output object
 if options.OUTPUT_FORMAT == "xls":
     from output_xlsx import OutputXLSX
@@ -119,11 +126,7 @@ except Exception as e:
 progress = ProgressWindow("SRUM-DUMP 3.0")
 progress.start(len(table_list))
 
-#Enable to debug when dissect in use
-# import debugpy
-# debugpy.listen(5678)
-# print("Waiting for debugger...")
-# debugpy.wait_for_client()
+
 
 #Preload some lookup tables for speed
 trans_table = config.get_config("columns_to_translate")
@@ -197,7 +200,10 @@ for each_table in table_list:
                     new_row.append( embedded_value/86400.0)
                 elif out_format[:5] == "FILE:":          
                     val = helpers.file_timestamp(embedded_value)
-                    val = val.strftime(out_format[5:])
+                    if isinstance(val, datetime):
+                        val = val.strftime(out_format[5:])
+                    else:
+                        val = embedded_value
                     new_row.append(val)
                 elif out_format == "network_interface":
                     val = config.get_config('network_interfaces').get(str(embedded_value), embedded_value)
