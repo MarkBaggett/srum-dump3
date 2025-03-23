@@ -21,7 +21,7 @@ class ProgressWindow:
         self.root = tk.Tk()
         self.root.title(title)
         self.root.geometry("600x400")
-        self.root.attributes('-topmost', True)
+        #self.root.attributes('-topmost', True)
         self.root.after(2000, self.remove_topmost, self.root)
         
         # Current table label
@@ -141,18 +141,22 @@ def message_box(title, message):
 def browse_file(initial_dir, filetypes):
     root = tk.Tk()
     root.withdraw()
-    initial_dir = str(initial_dir).replace("/","\\")
+    initial_dir = str(pathlib.Path(initial_dir).resolve()).replace("/", "\\")
     file_path = filedialog.askopenfilename(initialdir=initial_dir, filetypes=filetypes)
     root.destroy()
-    return file_path.replace("/", "\\")
+    # If a file was selected, canonicalize it and return with backslashes
+    if file_path:
+        canonical_path = str(pathlib.Path(file_path).resolve()).replace("/", "\\")
+        return canonical_path
+    return ""  # Return empty string if no file selected
 
 def browse_directory(initial_dir):
     root = tk.Tk()
     root.withdraw()
-    initial_dir = str(initial_dir).replace("/", "\\")
+    initial_dir = str(pathlib.Path(initial_dir).resolve()).replace("/", "\\")
     directory_path = filedialog.askdirectory(initialdir=initial_dir)
     root.destroy()
-    return directory_path.replace("/","\\")
+    return str(pathlib.Path(directory_path).resolve()).replace("/","\\")
 
 def get_user_input(options):
     srum_path = options.SRUM_INFILE
@@ -174,9 +178,9 @@ def get_user_input(options):
         window.attributes('-topmost', False)
 
     def on_ok():
-        srum_path = srum_path_entry.get()
-        out_dir = out_dir_entry.get()
-        config_file = config_file_entry.get()
+        srum_path = str(pathlib.Path(srum_path_entry.get()).resolve()).replace("/","\\")
+        out_dir = str(pathlib.Path(out_dir_entry.get()).resolve()).replace("/", "\\")
+        config_file = str(pathlib.Path(config_file_entry.get()).resolve()).replace("/", "\\")
 
         if not pathlib.Path(srum_path).is_file():
             messagebox.showerror("Error", "The SRUM database specified does not exist.")
