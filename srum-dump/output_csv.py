@@ -7,6 +7,9 @@ class OutputCSV:
     A class for writing CSV “workbooks”. In this design, a workbook is simply a directory,
     and each worksheet is a CSV file managed by a context manager.
     """
+    def __init__(self):
+        self.wb = None
+        self.path = None
 
     def new_workbook(self, path: Path):
         """
@@ -14,9 +17,13 @@ class OutputCSV:
         :param path: A pathlib.Path for the workbook directory.
         :return: The Path object representing the workbook directory.
         """
+        self.path = path
         if not path.exists():
             path.mkdir(parents=True)
         return path
+    
+    def save(self):
+        return
 
     class CSVWorksheetContext:
         def __init__(self, file_path: Path, column_headers: list):
