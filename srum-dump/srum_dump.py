@@ -27,7 +27,6 @@ parser.add_argument("--OUT_DIR", "-o", help="Full path to a working output direc
 parser.add_argument("--REG_HIVE", "-r", help="If SOFTWARE registry hive is provided then the names of the network profiles will be resolved.")
 parser.add_argument("--ESE_ENGINE", "-e", choices=['pyesedb', 'dissect'], default='dissect', help="Corrupt file? Try a different engine to see if it does better. Options are pyesedb or dissect")
 parser.add_argument("--OUTPUT_FORMAT", "-f", choices=['xls', 'csv'], default='xls', help="Specify the output format. Options are xls or csv. Default is xls.")
-parser.add_argument("--DONT_REPAIR_SRUM", "-d", action="store_true", help="Do not repair SRUDB.dat after live extraction.")
 options = parser.parse_args()
 
 
@@ -64,12 +63,15 @@ if options.SRUM_INFILE:
             error_message_box("Error", "The file you selected is locked by the operating system. Please run this program as an administrator or select a different file.")   
             sys.exit(1)
         else:
-            success = copy_locked.copy_locked_files(options.OUT_DIR, not options.DONT_REPAIR_SRUM)
-            if not success:
-                sys.exit(1)
+            success = copy_locked.copy_locked_files(options.OUT_DIR)
             options.SRUM_INFILE = str(pathlib.Path(options.OUT_DIR).joinpath("SRUDB.dat"))
             options.REG_HIVE =  str(pathlib.Path(options.OUT_DIR).joinpath("SOFTWARE"))
             options.OUT_DIR = str(pathlib.Path(options.OUT_DIR))
+            config.set_config("defaults", vars(options))
+            config.save()
+            if not success:
+                sys.exit(1)
+
 
 
 #If a registry hive is provided extract SIDS and network profiles and put it in the config file
@@ -85,10 +87,12 @@ if options.REG_HIVE:
         config.set_config("known_sids", known_sids)
         config.save()
     
-#Let User confirm the settings and paths.
+#Let User confirm the settings and paths.  Then save for reuse next time
 get_user_input(options)
+config.set_config("defaults", vars(options))
+config.save()
 
-#Load the configuration file
+#Use the config they selected in the dialog box for processing.
 config = ConfigManager(config_path)
 
 #Select ESE engine
@@ -200,7 +204,7 @@ for each_table in table_list:
                     new_row.append( embedded_value/86400.0)
                 elif out_format[:5] == "FILE:":          
                     val = helpers.file_timestamp(embedded_value)
-                    if isinstance(val, datetime):
+                    if isinstance(val, datetime.datetime):
                         val = val.strftime(out_format[5:])
                     else:
                         val = embedded_value
@@ -229,6 +233,9 @@ for each_table in table_list:
         progress.log_message(f"Table {table_name} contained {table_count} records.\n")
 
 
+# Remove the default "Sheet" if it exists
+if 'Sheet' in workbook.sheetnames:
+    del workbook['Sheet']
 progress.log_message(f"Finalizing output now...  Total Records: {read_count}.\n")
 output.save()
 progress.set_current_table("Finished")
